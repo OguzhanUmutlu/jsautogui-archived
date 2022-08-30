@@ -28,6 +28,7 @@ type KeyboardKey = "\t" | "\n" | "\r" | " " | "!" | "\"" | "#" | "$" | "%" | "&"
     "yen" | "command" | "option" | "optionleft" | "optionright";
 type RectRegion = [number, number, number, number] | { left: number, top: number, width: number, height: number };
 type PILImage = {
+    raw: string[],
     mode: "RGB",
     size: { width: number, height: number }
 };

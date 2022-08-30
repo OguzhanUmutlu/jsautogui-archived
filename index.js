@@ -34,7 +34,7 @@ const methods = [
     let _promise;
     const promise = new Promise(r => _promise = r);
     module.exports = {promise};
-    methods.forEach(i=> module.exports[i] = async (...args) => {
+    methods.forEach(i => module.exports[i] = async (...args) => {
         await promise;
         return await module.exports[i](...args);
     });
@@ -58,7 +58,7 @@ const methods = [
         spawned.on("close", (code, signal) => {
             connected = false;
             if (options.debug) {
-                options.debug("Closed with the code: " + code);
+                options.debug("Closed with the code: " + code + ", signal: " + signal);
                 options.debug("Respawning...");
             }
             spawn();
@@ -124,6 +124,17 @@ const methods = [
         if (!arr.includes(a)) throw new Error("Expected " + t + ", got " + a);
     };
     const checkSubArr = (a, arr, t) => a.forEach(a => checkArr(a, arr, t));
+    const pilImage = str => {
+        str = str.substring(1, str.length - 1).split(" ");
+        return {
+            raw: str,
+            mode: str[2].split("=").slice(1).join("="),
+            size: {
+                width: str[3].split("=").slice(1).join("=").split("x")[0] * 1,
+                height: str[3].split("=").slice(1).join("=").split("x")[1] * 1
+            }
+        };
+    }
     Object.assign(module.exports, {
         _send: send,
         position: () => convertObject(first(autoSplit(send("position"))), {x: 0, y: 1}),
@@ -229,32 +240,34 @@ const methods = [
                     if (region.length !== 4) throw new Error("Expected number[4], got number[" + region.length + "]")
                 } else checkAll([region.left, 0], [region.top, 0], [region.width, 0], [region.height, 0]);
             }
-            await send("screenshot", {file, region});
+            return pilImage((await send("screenshot", {file, region}))[0]);
         },
         locateOnScreen: async (file = null) => {
             checkAll([file, "", null]);
-            await send("locate-on-screen", {file});
+            return pilImage((await send("locate-on-screen", {file}))[0]);
         },
         locateAllOnScreen: async (file = null) => {
             checkAll([file, "", null]);
-            await send("locate-all-on-screen", {file});
+            return pilImage((await send("locate-all-on-screen", {file}))[0]);
         },
         locateCenterOnScreen: async (file = null) => {
             checkAll([file, "", null]);
-            await send("locate-center-on-screen", {file});
+            return pilImage((await send("locate-center-on-screen", {file}))[0]);
         },
         dragTo: async (x = null, y = null, duration = null, button = null) => {
             checkAll([x, 0, null], [y, 0, null], [duration, 0, null], [button, "", null]);
             checkArr(button, MouseButtons, "mouse button");
-            await send("drag-to", {x, y,});
+            await send("drag-to", {x, y, duration, button});
         },
         dragRelative: async (x = null, y = null, duration = null, button = null) => {
             checkAll([x, 0, null], [y, 0, null], [duration, 0, null], [button, "", null]);
             checkArr(button, MouseButtons, "mouse button");
+            await send("drag-rel", {x, y, duration, button});
         },
         drag: async (x = null, y = null, duration = null, button = null) => {
             checkAll([x, 0, null], [y, 0, null], [duration, 0, null], [button, "", null]);
             checkArr(button, MouseButtons, "mouse button");
+            await send("drag", {x, y, duration, button});
         },
     });
     _promise();
