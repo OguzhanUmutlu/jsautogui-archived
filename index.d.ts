@@ -99,3 +99,9 @@ export function dragTo(x?: number | null, y?: number | null, duration?: number |
 export function dragRelative(x?: number | null, y?: number | null, duration?: number | null, button?: MouseButton | null): Promise<void>;
 
 export function drag(x?: number | null, y?: number | null, duration?: number | null, button?: MouseButton | null): Promise<void>;
+
+export function ready(): Promise<void>;
+
+export const options: {extension: "cmd" | "exe", debug: boolean};
+
+export const promise: Promise<void>;

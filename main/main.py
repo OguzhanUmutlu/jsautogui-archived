@@ -1,4 +1,5 @@
 import json
+
 import pyautogui
 
 while True:
@@ -9,6 +10,22 @@ while True:
         continue
     _id = _json["id"]
     action = _json["action"]
+
+
+    def dic(*a):
+        d = dict()
+        for i in a:
+            if g(i) is not None:
+                d[i] = g(i)
+        return d
+
+
+    def lis(*a):
+        l = list()
+        for i in a:
+            if g(i) is not None:
+                l.append(g(i))
+        return l
 
 
     def g(n):
@@ -38,92 +55,92 @@ while True:
     elif action == "size":
         print_point(pyautogui.size())
     elif action == "on-screen":
-        pr(pyautogui.onScreen(g("x"), g("y")))
+        pr(pyautogui.onScreen(*lis("x", "y")))
     elif action == "PAUSE":
         pyautogui.PAUSE = g("value")
     elif action == "FAILSAFE":
         pyautogui.FAILSAFE = g("value")
     elif action == "move-to":
-        pyautogui.moveTo(g("x"), g("y"), duration=g("duration"))
+        pyautogui.moveTo(*lis("x", "y"), **dic("duration"))
     elif action == "move":
-        pyautogui.move(g("x"), g("y"), duration=g("duration"))
+        pyautogui.move(*lis("x", "y"), **dic("duration"))
     elif action == "move-rel":
-        pyautogui.moveRel(g("x"), g("y"), duration=g("duration"))
+        pyautogui.moveRel(*lis("x", "y"), **dic("duration"))
     elif action == "click":
-        pyautogui.click(x=g("x"), y=g("y"), clicks=g("clicks"), interval=g("interval"), button=g("button"))
+        pyautogui.click(**dic("x", "y", "clicks", "interval", "button"))
     elif action == "v-scroll":
-        pyautogui.vscroll(g("value"), x=g("x"), y=g("y"))
+        pyautogui.vscroll(*lis("value"), **dic("x", "y"))
     elif action == "h-scroll":
-        pyautogui.hscroll(g("value"), x=g("x"), y=g("y"))
+        pyautogui.hscroll(*lis("value"), **dic("x", "y"))
     elif action == "mouse-down":
-        pyautogui.mouseDown(x=g("x"), y=g("y"), button=g("button"))
+        pyautogui.mouseDown(**dic("x", "y", "button"))
     elif action == "mouse-up":
-        pyautogui.mouseUp(x=g("x"), y=g("y"), button=g("button"))
+        pyautogui.mouseUp(**dic("x", "y", "button"))
     elif action == "type-write":
-        pyautogui.typewrite(g("text"), interval=g("interval"))  # text can be a string or an array of strings
+        pyautogui.typewrite(*lis("text"), **dic("interval"))  # text can be a string or an array of strings
     elif action == "hotkey":
-        pyautogui.hotkey(*g("keys"), interval=g("interval"))
+        pyautogui.hotkey(*lis("keys"), **dic("interval"))
     elif action == "key-down":
-        pyautogui.keyDown(g("key"))
+        pyautogui.keyDown(*lis("key"))
     elif action == "key-up":
-        pyautogui.keyUp(g("key"))
+        pyautogui.keyUp(*lis("key"))
     elif action == "press":
-        pyautogui.press(g("key"))
+        pyautogui.press(*lis("key"))
     elif action == "alert-js":
-        pyautogui.alert(g("text"))
+        pyautogui.alert(*lis("text"))
     elif action == "alert":
-        pyautogui.alert(text=g("text"), title=g("title"), button=g("button"))
+        pyautogui.alert(**dic("text", "title", "button"))
     elif action == "confirm-js":
-        pr(pyautogui.confirm(g("text")))
+        pr(pyautogui.confirm(*lis("text")))
     elif action == "confirm":
-        res = pyautogui.confirm(text=g("text"), title=g("title"), buttons=g("buttons"))
+        res = pyautogui.confirm(**dic("text", "title", "buttons"))
         if res is None:
             pr("fail:None")
         else:
             pr("success:" + res)
     elif action == "prompt-js":
-        pr(pyautogui.prompt(g("text")))
+        pr(pyautogui.prompt(*lis("text")))
     elif action == "prompt":
-        res = pyautogui.prompt(text=g("text"), title=g("title"), default=g("default"))
+        res = pyautogui.prompt(**dic("text", "title", "default"))
         if res is None:
             pr("fail:None")
         else:
             pr("success:" + res)
     elif action == "password-js":
-        pr(pyautogui.password(g("text")))
+        pr(pyautogui.password(*lis("text")))
     elif action == "password":
-        res = pyautogui.password(text=g("text"), title=g("title"), default=g("default"), mask=g("mask"))
+        res = pyautogui.password(**dic("text", "title", "default", "mask"))
         if res is None:
             pr("fail:None")
         else:
             pr("success:" + res)
     elif action == "screenshot":
-        pr(pyautogui.screenshot(g("file"), region=g("region")))
+        pr(pyautogui.screenshot(*lis("file"), **dic("region")))
     elif action == "locate-on-screen":
         try:
-            print_point(pyautogui.locateOnScreen(g("file")))
+            print_point(pyautogui.locateOnScreen(*lis("file")))
         except:
             pr("fail")
             pass
     elif action == "locate-all-on-screen":
         try:
-            for p in pyautogui.locateAllOnScreen(g("file")):
+            for p in pyautogui.locateAllOnScreen(*lis("file")):
                 print_point(p)
         except:
             pr("fail")
             pass
     elif action == "locate-center-on-screen":
         try:
-            print_point(pyautogui.locateCenterOnScreen(g("file")))
+            print_point(pyautogui.locateCenterOnScreen(*lis("file")))
         except:
             pr("fail")
             pass
     elif action == "drag-to":
-        pyautogui.dragTo(x=g("x"), y=g("y"), duration=g("duration"), button=g("button"))
+        pyautogui.dragTo(**dic("x", "y", "duration", "button"))
     elif action == "drag-rel":
-        pyautogui.dragRel(x=g("x"), y=g("y"), duration=g("duration"), button=g("button"))
+        pyautogui.dragRel(**dic("x", "y", "duration", "button"))
     elif action == "drag":
-        pyautogui.drag(x=g("x"), y=g("y"), duration=g("duration"), button=g("button"))
+        pyautogui.drag(**dic("x", "y", "duration", "button"))
     else:
         pass
     pr("success")

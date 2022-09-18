@@ -1,6 +1,6 @@
 {
   "name": "jsautogui",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "An implementation of pyautogui to node.js",
   "main": "index.js",
   "scripts": {},
@@ -15,6 +15,8 @@
     "gui",
     "autogui",
     "pyautogui",
+    "mouse",
+    "keyboard",
     "robot"
   ],
   "author": "OguzhanUmutlu",

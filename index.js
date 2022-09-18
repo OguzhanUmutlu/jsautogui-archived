@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 const child_process = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -33,53 +35,51 @@ const methods = [
 (async () => {
     let _promise;
     const promise = new Promise(r => _promise = r);
-    module.exports = {promise};
+    const options = {extension: "exe", debug: false};
+    module.exports = {promise, ready: () => promise, options};
+    await new Promise(r => process.nextTick(r));
     methods.forEach(i => module.exports[i] = async (...args) => {
         await promise;
         return await module.exports[i](...args);
     });
-    const options = {extension: "exe", debug: false};
-    /*if (typeof options !== "object" || options === null) options = {};
-    const defaultOptions = {extension: "exe", debug: false};
-    Object.keys(defaultOptions).forEach(i => !Object.keys(options).includes(i) && (options[i] = defaultOptions[i]));
-    if (!["cmd", "exe"].includes(options.extension)) options.extension = defaultOptions.extension;
-    if (options.debug === true) options.debug = console.log;
-    if (options.debug !== false && typeof options.debug !== "function") options.debug = false;*/
-    let connected = false;
-    let spawned;
-    let query = [];
-    let _first = true;
-    const spawn = async () => {
-        if (options.extension === "cmd") fs.writeFileSync(path.join(__dirname, "main", "main.cmd"), `@echo off\npy ${path.join(__dirname, "main", "main.py")}`);
-        spawned = child_process.spawn({
-            cmd: "./main/main.cmd",
-            exe: "./main/main.exe"
+    const connected = {};
+    const spawned = {};
+    const query = {};
+    const _first = {};
+    const spawn = async name => {
+        const file = path.join(__dirname, "main", name + "." + options.extension);
+        query[file] = query[file] || [];
+        if (options.extension !== "exe") fs.writeFileSync(file, {
+            cmd: `@echo off\npy main\\${name}.py`,
+            sh: `py main/${name}.py`
         }[options.extension]);
-        spawned.on("close", (code, signal) => {
-            connected = false;
+        spawned[file] = child_process.spawn(file);
+        spawned[file].on("close", (code, signal) => {
+            connected[file] = false;
             if (options.debug) {
                 options.debug("Closed with the code: " + code + ", signal: " + signal);
                 options.debug("Respawning...");
             }
-            spawn();
+            spawn(name);
         });
-        spawned.on("error", err => {
-            if (_first) throw err; // Probably file doesn't exist?
+        spawned[file].on("error", err => {
+            if (!_first[file]) throw err; // Probably file doesn't exist?
             if (options.debug) options.debug("error", err);
         });
-        spawned.on("spawn", () => {
-            _first = false;
-            connected = true;
+        spawned[file].on("spawn", () => {
+            _first[file] = true;
+            connected[file] = true;
             if (options.debug) options.debug("Spawned.");
-            query.forEach(i => spawned.stdin.write(i));
+            query[file].forEach(i => spawned[file].stdin.write(i));
         });
-        spawned.stdout.on("data", data => {
+        spawned[file].stdout.on("data", data => {
             const response = data.toString().replaceAll("\r", "").replaceAll(/\n$/g, "");
-            response.split("\n").forEach(res => spawned.stdout.emit("_actual_data", res));
+            response.split("\n").forEach(res => spawned[file].stdout.emit("_actual_data", res));
         });
-        spawned.stdout.on("_actual_data", response => {
+        spawned[file].stdout.on("_actual_data", response => {
             const id = response.split(" ")[0];
             const message = response.split(" ").slice(1).join(" ");
+            if (options.debug) console.log("-> " + message);
             if (_res[id]) {
                 if (message === "success") {
                     _res[id].r(_res[id].data);
@@ -90,18 +90,20 @@ const methods = [
     };
     let _id = 0;
     const _res = {};
-    await spawn();
+    await spawn("main");
     /**
+     * @param {"main"} file
      * @param {string} action
      * @param {Object} obj
      * @returns {Promise<string[]>}
      */
-    const send = (action, obj = {}) => new Promise(r => {
+    const send = (file, action, obj = {}) => new Promise(r => {
+        file = path.join(__dirname, "main", file + "." + options.extension);
         const id = _id++;
         _res[id] = {r, data: []};
         const pack = JSON.stringify({...obj, id, action}) + "\n";
-        if (!connected) return query.push(pack);
-        spawned.stdin.write(pack);
+        if (!connected[file]) return query[file].push(pack);
+        spawned[file].stdin.write(pack);
     });
     const convertObject = async (a, b) => {
         a = await a;
@@ -134,98 +136,98 @@ const methods = [
                 height: str[3].split("=").slice(1).join("=").split("x")[1] * 1
             }
         };
-    }
+    };
     Object.assign(module.exports, {
         _send: send,
-        position: () => convertObject(first(autoSplit(send("position"))), {x: 0, y: 1}),
-        size: () => convertObject(first(autoSplit(send("size"))), {width: 0, height: 1}),
+        position: () => convertObject(first(autoSplit(send("main", "position"))), {x: 0, y: 1}),
+        size: () => convertObject(first(autoSplit(send("main", "size"))), {width: 0, height: 1}),
         isOnScreen: async (x = null, y = null) => {
             checkAll([x, 0], [y, 0]);
-            return (await send("on-screen", {x, y}))[0] === "True";
+            return (await send("main", "on-screen", {x, y}))[0] === "True";
         },
         setPause: async (seconds = null) => {
             check(seconds, 0);
-            await send("PAUSE", {value: seconds});
+            await send("main", "PAUSE", {value: seconds});
         },
         setFailSafe: async (value = null) => {
             check(value, true);
-            await send("FAILSAFE", {value});
+            await send("main", "FAILSAFE", {value});
         },
         moveTo: async (x = null, y = null, duration = null) => {
             checkAll([x, 0, null], [y, 0, null], [duration, 0, null]);
-            await send("move-to", {x, y, duration});
+            await send("main", "move-to", {x, y, duration});
         },
         move: async (x = null, y = null, duration = null) => {
             checkAll([x, 0, null], [y, 0, null], [duration, 0, null]);
-            await send("move", {x, y, duration});
+            await send("main", "move", {x, y, duration});
         },
         moveRelative: async (x = null, y = null, duration = null) => {
             checkAll([x, 0, null], [y, 0, null], [duration, 0, null]);
-            await send("move-rel", {x, y, duration});
+            await send("main", "move-rel", {x, y, duration});
         },
         click: async (x = null, y = null, clicks = null, interval = null, button = null) => {
             checkAll([x, 0, null], [y, 0, null], [clicks, 0, null], [interval, 0, null], [button, "", null]);
             if (button !== null) checkArr(button, KeyboardKeys, "keyboard key");
-            await send("click", {x, y, clicks, interval, button});
+            await send("main", "click", {x, y, clicks, interval, button});
         },
         vScroll: async (value = null, x = null, y = null) => {
             checkAll([x, 0, null], [y, 0, null], [value, 0]);
-            await send("v-scroll", {value, x, y});
+            await send("main", "v-scroll", {value, x, y});
         },
         hScroll: async (value = null, x = null, y = null) => {
             checkAll([x, 0, null], [y, 0, null], [value, 0]);
-            await send("v-scroll", {value, x, y});
+            await send("main", "v-scroll", {value, x, y});
         },
         mouseDown: async (button = null, x = null, y = null) => {
             checkAll([x, 0, null], [y, 0, null], [button, ""]);
             checkArr(button, MouseButtons, "mouse button");
-            await send("mouse-down", {button, x, y});
+            await send("main", "mouse-down", {button, x, y});
         },
         mouseUp: async (button = null, x = null, y = null) => {
             checkAll([x, 0, null], [y, 0, null], [button, ""]);
             checkArr(button, MouseButtons, "mouse button");
-            await send("mouse-up", {button, x, y});
+            await send("main", "mouse-up", {button, x, y});
         },
         typeString: async (text = null, interval = null) => {
             checkAll([text, ""], [interval, 0, null]);
-            await send("type-write", {text, interval});
+            await send("main", "type-write", {text, interval});
         },
         typeKeys: async (keys = null, interval = null) => {
             checkAll([keys, []], [interval, 0, null]);
             checkSubArr(keys, KeyboardKeys, "keyboard key");
-            await send("hotkey", {keys, interval});
+            await send("main", "hotkey", {keys, interval});
         },
         keyDown: async (key = null) => {
             check(key, "");
             checkArr(key, KeyboardKeys, "keyboard key");
-            await send("key-down", {key});
+            await send("main", "key-down", {key});
         },
         keyUp: async (key = null) => {
             check(key, "");
             checkArr(key, KeyboardKeys, "keyboard key");
-            await send("key-down", {key});
+            await send("main", "key-down", {key});
         },
         press: async (key = null) => {
             check(key, "");
             checkArr(key, KeyboardKeys, "keyboard key");
-            await send("press", {key});
+            await send("main", "press", {key});
         },
         alert: async (text = null, title = null, button = null) => {
             checkAll([text, "", null], [title, "", null], [button, "", null]);
-            await send(title || button ? "alert" : "alert-js", {text, title, button});
+            await send("main", title || button ? "alert" : "alert-js", {text, title, button});
         },
         confirm: async (text = null, title = null, buttons = null) => {
             checkAll([text, "", null], [title, "", null], [buttons, [], null]);
             if (buttons !== null) buttons.forEach(i => check(i, ""));
-            return (await send(title || buttons ? "confirm" : "confirm-js", {text, title, buttons}))[0];
+            return (await send("main", title || buttons ? "confirm" : "confirm-js", {text, title, buttons}))[0];
         },
         prompt: async (text = null, title = null, default_ = null) => {
             checkAll([text, "", null], [title, "", null], [default_, "", null]);
-            return (await send(title || default_ ? "prompt" : "prompt-js", {text, title, default_}))[0];
+            return (await send("main", title || default_ ? "prompt" : "prompt-js", {text, title, default_}))[0];
         },
         password: async (text = null, title = null, default_ = null, mask = null) => {
             checkAll([text, "", null], [title, "", null], [default_, "", null], [mask, "", null]);
-            return (await send(title || default_ || mask ? "password" : "password-js", {
+            return (await send("main", title || default_ || mask ? "password" : "password-js", {
                 text,
                 title,
                 default_,
@@ -240,34 +242,34 @@ const methods = [
                     if (region.length !== 4) throw new Error("Expected number[4], got number[" + region.length + "]")
                 } else checkAll([region.left, 0], [region.top, 0], [region.width, 0], [region.height, 0]);
             }
-            return pilImage((await send("screenshot", {file, region}))[0]);
+            return pilImage((await send("main", "screenshot", {file, region}))[0]);
         },
         locateOnScreen: async (file = null) => {
             checkAll([file, "", null]);
-            return pilImage((await send("locate-on-screen", {file}))[0]);
+            return pilImage((await send("main", "locate-on-screen", {file}))[0]);
         },
         locateAllOnScreen: async (file = null) => {
             checkAll([file, "", null]);
-            return pilImage((await send("locate-all-on-screen", {file}))[0]);
+            return pilImage((await send("main", "locate-all-on-screen", {file}))[0]);
         },
         locateCenterOnScreen: async (file = null) => {
             checkAll([file, "", null]);
-            return pilImage((await send("locate-center-on-screen", {file}))[0]);
+            return pilImage((await send("main", "locate-center-on-screen", {file}))[0]);
         },
         dragTo: async (x = null, y = null, duration = null, button = null) => {
             checkAll([x, 0, null], [y, 0, null], [duration, 0, null], [button, "", null]);
             checkArr(button, MouseButtons, "mouse button");
-            await send("drag-to", {x, y, duration, button});
+            await send("main", "drag-to", {x, y, duration, button});
         },
         dragRelative: async (x = null, y = null, duration = null, button = null) => {
             checkAll([x, 0, null], [y, 0, null], [duration, 0, null], [button, "", null]);
             checkArr(button, MouseButtons, "mouse button");
-            await send("drag-rel", {x, y, duration, button});
+            await send("main", "drag-rel", {x, y, duration, button});
         },
         drag: async (x = null, y = null, duration = null, button = null) => {
             checkAll([x, 0, null], [y, 0, null], [duration, 0, null], [button, "", null]);
             checkArr(button, MouseButtons, "mouse button");
-            await send("drag", {x, y, duration, button});
+            await send("main", "drag", {x, y, duration, button});
         },
     });
     _promise();
