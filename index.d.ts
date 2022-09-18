@@ -102,6 +102,6 @@ export function drag(x?: number | null, y?: number | null, duration?: number | n
 
 export function ready(): Promise<void>;
 
-export const options: {extension: "cmd" | "exe", debug: boolean};
+export const options: {extension: "cmd" | "sh" | "exe", debug: boolean};
 
 export const promise: Promise<void>;

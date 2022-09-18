@@ -1,6 +1,6 @@
 {
   "name": "jsautogui",
-  "version": "1.0.3.3",
+  "version": "1.0.3.4",
   "description": "An implementation of pyautogui to node.js",
   "main": "index.js",
   "scripts": {},
