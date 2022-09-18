@@ -40,7 +40,7 @@ type PILImage = {
  * /
 export function init(options?: AutoGuiDeprecatedOptions): Promise<void>;*/
 
-export function _send(action: string, object: Object): Promise<string[]>;
+export function _send(type: "main", action: string, object: Object): Promise<string[]>;
 
 export function position(): Promise<{ x: number, y: number }>;
 
