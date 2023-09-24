@@ -1,12 +1,12 @@
 {
   "name": "jsautogui",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "An implementation of pyautogui to node.js",
   "main": "index.js",
   "scripts": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OguzhanUmutlu/jsautogui.git"
+    "url": "git+https://github.com/OguzhanUmutlu/jsautogui-archived.git"
   },
   "keywords": [
     "js",
@@ -23,7 +23,7 @@
   "license": "MIT",
   "types": "./index.d.ts",
   "bugs": {
-    "url": "https://github.com/OguzhanUmutlu/jsautogui/issues"
+    "url": "https://github.com/OguzhanUmutlu/jsautogui-archived/issues"
   },
-  "homepage": "https://github.com/OguzhanUmutlu/jsautogui#readme"
+  "homepage": "https://github.com/OguzhanUmutlu/jsautogui-archived#readme"
 }

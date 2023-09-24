@@ -1,5 +1,7 @@
 # jsautogui
 
+# <a href="https://npmjs.com/package/jsautogui"><font color="red">This package is deprecated. Use the package `jsautogui` instead! Click me to view it.</font></a>
+
 An implementation of pyautogui to node.js
 
 [![](https://img.shields.io/badge/Discord-black?style=for-the-badge&logo=discord)](https://discord.gg/emAhrw3mvM)
@@ -7,7 +9,7 @@ An implementation of pyautogui to node.js
 # Installation
 
 ```shell
-npm install jsautogui 
+npm install jsautogui
 ```
 
 ## Importing
